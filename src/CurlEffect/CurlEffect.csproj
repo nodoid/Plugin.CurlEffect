@@ -28,7 +28,7 @@
 		<Description>A bindable, book-style page-curl control for .NET MAUI, rendered with SkiaSharp. Drag from any edge to turn pages, with programmatic Animate/AnimateFrom/AnimateToStart/AnimateToEnd commands (sync, async, and ICommand), a bindable TurnSpeed, and an ICurlView : IView surface usable from any view.</Description>
 		<PackageTags>maui;skiasharp;page-curl;pageturn;page-turn;book;control;animation</PackageTags>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageProjectUrl>https://github.com/nodoid/Plugin.CurlView</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/nodoid/Plugin.CurlEffect</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageReleaseNotes>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/README.md"))</PackageReleaseNotes>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
