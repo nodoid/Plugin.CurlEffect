@@ -23,7 +23,7 @@
 		<IsPackable>true</IsPackable>
 		<PackageId>Plugin.CurlEffect</PackageId>
 		<Title>Plugin.CurlEffect — .NET MAUI page-curl control</Title>
-		<Version>1.0.0</Version>
+		<Version>1.0.1</Version>
 		<Authors>William</Authors>
 		<Description>A bindable, book-style page-curl control for .NET MAUI, rendered with SkiaSharp. Drag from any edge to turn pages, with programmatic Animate/AnimateFrom/AnimateToStart/AnimateToEnd commands (sync, async, and ICommand), a bindable TurnSpeed, and an ICurlView : IView surface usable from any view.</Description>
 		<PackageTags>maui;skiasharp;page-curl;pageturn;page-turn;book;control;animation</PackageTags>
