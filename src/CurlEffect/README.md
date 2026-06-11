@@ -9,12 +9,12 @@ edge to turn pages, or drive it programmatically with sync / async / `ICommand` 
 dotnet add package Plugin.CurlEffect
 ```
 
-Register SkiaSharp in your `MauiProgram`:
+Register the plugin in your `MauiProgram` (this also wires up SkiaSharp):
 
 ```csharp
-using SkiaSharp.Views.Maui.Controls.Hosting;
+using CurlEffect.Controls;
 
-builder.UseMauiApp<App>().UseSkiaSharp();
+builder.UseMauiApp<App>().UseCurlEffect();
 ```
 
 ## Usage
