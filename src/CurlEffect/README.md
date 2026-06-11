@@ -6,7 +6,7 @@ edge to turn pages, or drive it programmatically with sync / async / `ICommand` 
 ## Install
 
 ```sh
-dotnet add package CurlEffect
+dotnet add package Plugin.CurlEffect
 ```
 
 Register SkiaSharp in your `MauiProgram`:
