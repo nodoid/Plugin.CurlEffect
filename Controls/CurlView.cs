@@ -43,7 +43,7 @@ public sealed class CurlPageDrawContext
 /// forward, or the left edge to turn back. Each page is painted by <see cref="PageDrawer"/> / the
 /// <see cref="DrawPage"/> event (a default text drawer is used otherwise).
 /// </summary>
-public class CurlView : ContentView
+public class CurlView : ContentView, ICurlView
 {
     readonly SKCanvasView _canvas;
 
