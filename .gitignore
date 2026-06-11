@@ -1,0 +1,24 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+
+# MAUI / .NET
+*.binlog
+project.lock.json
+*.nupkg
+
+# macOS
+.DS_Store
