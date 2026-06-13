@@ -5,6 +5,29 @@
              x:Class="CurlEffect.MainPage"
              BackgroundColor="#2B2B2B">
 
+    <ContentPage.Resources>
+        <!-- Compact buttons so several fit per row, and a small margin gives spacing inside the
+             wrapping FlexLayouts (which have no Spacing of their own). -->
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="4,2" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style x:Key="Caption" TargetType="Label">
+            <Setter Property="TextColor" Value="#AAAAAA" />
+            <Setter Property="HorizontalTextAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
+        <!-- Light top navigation buttons. -->
+        <Style x:Key="NavButton" TargetType="Button">
+            <Setter Property="Margin" Value="4,2" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="BackgroundColor" Value="#ECECEC" />
+            <Setter Property="TextColor" Value="#2B2B2B" />
+        </Style>
+    </ContentPage.Resources>
+
     <Grid RowDefinitions="*,Auto" Padding="16">
 
         <Border Grid.Row="0"
@@ -19,52 +42,66 @@
                                PageChangedCommand="{Binding PageChangedCommand}" />
         </Border>
 
-        <VerticalStackLayout Grid.Row="1" Spacing="10" Padding="0,12,0,0">
-            <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
-                <Button Text="◀ Back"
-                        Command="{Binding Source={x:Reference Curl}, Path=PreviousCommand}" />
-                <Label Text="{Binding PageLabel}"
-                       TextColor="White"
-                       VerticalOptions="Center"
-                       WidthRequest="90"
-                       HorizontalTextAlignment="Center" />
-                <Button Text="Next ▶"
-                        Command="{Binding Source={x:Reference Curl}, Path=NextCommand}" />
-                <Button Text="⏩ End"
-                        Command="{Binding Source={x:Reference Curl}, Path=AnimateCommand}"
-                        CommandParameter="99" />
-                <Button Text="⏪ Start"
-                        Command="{Binding Source={x:Reference Curl}, Path=AnimateCommand}"
-                        CommandParameter="-99" />
-                <Button Text="Stop ■"
-                        Command="{Binding Source={x:Reference Curl}, Path=StopAnimationCommand}" />
-                <Picker Title="Speed"
-                        WidthRequest="120"
-                        ItemsSource="{Binding Speeds}"
-                        SelectedItem="{Binding Speed, Mode=TwoWay}" />
-            </HorizontalStackLayout>
+        <!-- Controls can grow taller than a phone allows once they wrap, so let them scroll. -->
+        <ScrollView Grid.Row="1" Padding="0,12,0,0" MaximumHeightRequest="320">
+            <VerticalStackLayout Spacing="4">
 
-            <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
-                <Label Text="AnimateFrom:" TextColor="#AAAAAA" VerticalOptions="Center" />
-                <Button Text="↗ TopRight → End"
-                        Command="{Binding Source={x:Reference Curl}, Path=AnimateFromCommand}"
-                        CommandParameter="TopRight,99" />
-                <Button Text="↘ BottomRight → End"
-                        Command="{Binding Source={x:Reference Curl}, Path=AnimateFromCommand}"
-                        CommandParameter="BottomRight,99" />
-                <Button Text="↙ BottomLeft → Start"
-                        Command="{Binding Source={x:Reference Curl}, Path=AnimateFromCommand}"
-                        CommandParameter="BottomLeft,-99" />
-            </HorizontalStackLayout>
+                <!-- Top navigation row: light buttons, centered. -->
+                <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Center">
+                    <Button Text="◀ Back"
+                            Style="{StaticResource NavButton}"
+                            Command="{Binding Source={x:Reference Curl}, Path=PreviousCommand}" />
+                    <Label Text="{Binding PageLabel}"
+                           TextColor="White"
+                           VerticalOptions="Center"
+                           WidthRequest="90"
+                           HorizontalTextAlignment="Center" />
+                    <Button Text="Next ▶"
+                            Style="{StaticResource NavButton}"
+                            Command="{Binding Source={x:Reference Curl}, Path=NextCommand}" />
+                </FlexLayout>
 
-            <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
-                <Label Text="Jump (no intermediates):" TextColor="#AAAAAA" VerticalOptions="Center" />
-                <Button Text="⏮ To Start"
-                        Command="{Binding Source={x:Reference Curl}, Path=AnimateToStartCommand}" />
-                <Button Text="⏭ To End"
-                        Command="{Binding Source={x:Reference Curl}, Path=AnimateToEndCommand}" />
-            </HorizontalStackLayout>
-        </VerticalStackLayout>
+                <!-- Start / End / Stop / Speed on one line. -->
+                <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Center">
+                    <Button Text="⏪ Start"
+                            Command="{Binding Source={x:Reference Curl}, Path=AnimateCommand}"
+                            CommandParameter="-99" />
+                    <Button Text="⏩ End"
+                            Command="{Binding Source={x:Reference Curl}, Path=AnimateCommand}"
+                            CommandParameter="99" />
+                    <Button Text="Stop ■"
+                            Command="{Binding Source={x:Reference Curl}, Path=StopAnimationCommand}" />
+                    <Picker Title="Speed"
+                            WidthRequest="100"
+                            TextColor="White"
+                            TitleColor="#AAAAAA"
+                            ItemsSource="{Binding Speeds}"
+                            SelectedItem="{Binding Speed, Mode=TwoWay}" />
+                </FlexLayout>
+
+                <Label Text="AnimateFrom" Style="{StaticResource Caption}" />
+                <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Center">
+                    <Button Text="↗ TopRight → End"
+                            Command="{Binding Source={x:Reference Curl}, Path=AnimateFromCommand}"
+                            CommandParameter="TopRight,99" />
+                    <Button Text="↘ BottomRight → End"
+                            Command="{Binding Source={x:Reference Curl}, Path=AnimateFromCommand}"
+                            CommandParameter="BottomRight,99" />
+                    <Button Text="↙ BottomLeft → Start"
+                            Command="{Binding Source={x:Reference Curl}, Path=AnimateFromCommand}"
+                            CommandParameter="BottomLeft,-99" />
+                </FlexLayout>
+
+                <Label Text="Jump (no intermediates)" Style="{StaticResource Caption}" />
+                <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Center">
+                    <Button Text="⏮ To Start"
+                            Command="{Binding Source={x:Reference Curl}, Path=AnimateToStartCommand}" />
+                    <Button Text="⏭ To End"
+                            Command="{Binding Source={x:Reference Curl}, Path=AnimateToEndCommand}" />
+                </FlexLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 
 </ContentPage>
