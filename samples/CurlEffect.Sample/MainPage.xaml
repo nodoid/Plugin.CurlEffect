@@ -15,6 +15,7 @@
                                ItemsSource="{Binding Pages}"
                                CurrentIndex="{Binding Index, Mode=TwoWay}"
                                TurnSpeed="{Binding Speed}"
+                               EdgeInset="24"
                                PageChangedCommand="{Binding PageChangedCommand}" />
         </Border>
 

@@ -64,16 +64,71 @@ public class CurlView : ContentView, ICurlView
         _canvas = new SKCanvasView();
         _canvas.PaintSurface += OnPaintSurface;
 
-        // PointerGestureRecognizer tracks press/drag/release for mouse & pen on desktop and touch
-        // on mobile, and (unlike SKCanvasView.Touch) reports a usable position on Mac Catalyst.
+#if ANDROID || IOS
+        // On touch platforms, PointerGestureRecognizer does NOT deliver finger press/move/release
+        // (it tracks mouse & stylus pointers, not touch), so a drag would never start. SKCanvasView's
+        // own touch events do fire for touch and report positions already in canvas pixels.
+        _canvas.EnableTouchEvents = true;
+        _canvas.Touch += OnCanvasTouch;
+#else
+        // Desktop (Windows / Mac Catalyst): PointerGestureRecognizer tracks mouse & pen and reports a
+        // usable position (unlike SKCanvasView.Touch, whose coordinates are wrong on Mac Catalyst).
         var pointer = new PointerGestureRecognizer();
         pointer.PointerPressed += OnPointerPressed;
         pointer.PointerMoved += OnPointerMoved;
         pointer.PointerReleased += OnPointerReleased;
         _canvas.GestureRecognizers.Add(pointer);
+#endif
 
         Content = _canvas;
     }
+
+    // ----------------------------------------------------------------- Android system-gesture handling
+
+    // On Android 10+ with gesture navigation, a swipe from the left/right screen edge is the system
+    // "back" gesture. That overlaps a backward page-turn (grab the left edge, drag inward), so without
+    // this the OS would navigate back / close the app instead of turning the page. We mark the control's
+    // bounds as a system-gesture exclusion zone so the OS leaves edge drags to us.
+    // (Android clamps each edge's exclusion to 200dp, which covers the corner/near-edge grabs that page
+    // turns naturally use; consumers can still add padding if they grab at the exact vertical centre.)
+    protected override void OnHandlerChanged()
+    {
+        base.OnHandlerChanged();
+#if ANDROID
+        if (_nativeView is not null)
+            _nativeView.LayoutChange -= OnNativeLayoutChange;
+
+        _nativeView = Handler?.PlatformView as Android.Views.View;
+
+        if (_nativeView is not null)
+        {
+            _nativeView.LayoutChange += OnNativeLayoutChange;
+            ApplyGestureExclusion();
+        }
+#endif
+    }
+
+#if ANDROID
+    Android.Views.View? _nativeView;
+
+    void OnNativeLayoutChange(object? sender, Android.Views.View.LayoutChangeEventArgs e) =>
+        ApplyGestureExclusion();
+
+    void ApplyGestureExclusion()
+    {
+        // setSystemGestureExclusionRects is API 29+; older devices use button nav and don't need it.
+        if (_nativeView is null || !OperatingSystem.IsAndroidVersionAtLeast(29)) return;
+
+        int w = _nativeView.Width, h = _nativeView.Height;
+        if (w <= 0 || h <= 0) return;
+
+        // Rect is in the view's own coordinate space, so the whole control is (0,0)-(w,h).
+        _nativeView.SystemGestureExclusionRects = new List<Android.Graphics.Rect>
+        {
+            new(0, 0, w, h),
+        };
+    }
+#endif
 
     // DIP -> canvas-pixel scale (SkiaSharp draws in pixels; pointer positions arrive in DIPs).
     float PixelScale => _canvas.Width > 0 ? (float)(_canvas.CanvasSize.Width / _canvas.Width) : 1f;
@@ -135,6 +190,32 @@ public class CurlView : ContentView, ICurlView
         CurlTurnSpeed.Slow => 600,
         _ => 320,
     };
+
+    /// <summary>
+    /// Left/right inset (in device-independent units) that keeps the touch-sensitive curl edge away
+    /// from the physical screen edge. On Android this is the belt-and-braces companion to the system
+    /// gesture-exclusion zone (which the OS caps at 200dp per edge): a non-zero inset guarantees an
+    /// edge page-turn isn't hijacked by the back swipe even when grabbed at the vertical centre.
+    /// Defaults to 0 (no inset); ~24 is a comfortable value on Android.
+    /// </summary>
+    public static readonly BindableProperty EdgeInsetProperty = BindableProperty.Create(
+        nameof(EdgeInset), typeof(double), typeof(CurlView), 0d,
+        propertyChanged: (b, _, _) => ((CurlView)b).ApplyEdgeInset());
+
+    public double EdgeInset
+    {
+        get => (double)GetValue(EdgeInsetProperty);
+        set => SetValue(EdgeInsetProperty, value);
+    }
+
+    // Inset the drawing/touch surface from the left and right edges. Because both rendering and
+    // pointer hit-testing run against the (now narrower) canvas, the curl's edge grab zone moves
+    // inward with it — no extra coordinate math needed.
+    void ApplyEdgeInset()
+    {
+        double i = Math.Max(0, EdgeInset);
+        _canvas.Margin = new Thickness(i, 0, i, 0);
+    }
 
     /// <summary>Optional per-page painter. If null, a default text drawer is used.</summary>
     public Action<CurlPageDrawContext>? PageDrawer { get; set; }
@@ -410,13 +491,16 @@ public class CurlView : ContentView, ICurlView
 
     // ----------------------------------------------------------------- Touch
 
-    void OnPointerPressed(object? sender, PointerEventArgs e)
+    // The press/move/release logic is shared; each platform feeds it from whichever input source
+    // actually delivers touch (SKCanvasView.Touch on mobile, PointerGestureRecognizer on desktop).
+    // All positions are in canvas pixels.
+
+    void BeginTurn(SKPoint p)
     {
         if (_animating || _turning) return;
         float w = _canvas.CanvasSize.Width, h = _canvas.CanvasSize.Height;
         if (w <= 0 || h <= 0) return;
 
-        var p = ToPixels(e.GetPosition(_canvas));
         float edgeZone = w * 0.22f; // how far in from an edge counts as "grabbing the edge"
 
         int dir;
@@ -433,18 +517,38 @@ public class CurlView : ContentView, ICurlView
         Invalidate();
     }
 
-    void OnPointerMoved(object? sender, PointerEventArgs e)
+    void UpdateTurn(SKPoint p)
     {
         if (!_turning || _animating) return;
-        _grip = ToPixels(e.GetPosition(_canvas));
+        _grip = p;
         Invalidate();
     }
 
-    void OnPointerReleased(object? sender, PointerEventArgs e)
+    void EndTurn()
     {
         if (!_turning || _animating) return;
         ReleaseTurn(_canvas.CanvasSize.Width, _canvas.CanvasSize.Height);
     }
+
+#if ANDROID || IOS
+    // SKTouchEventArgs.Location is already in canvas pixels. Marking the event Handled is required so
+    // the surface keeps sending Moved/Released after the initial Pressed.
+    void OnCanvasTouch(object? sender, SKTouchEventArgs e)
+    {
+        switch (e.ActionType)
+        {
+            case SKTouchAction.Pressed: BeginTurn(e.Location); break;
+            case SKTouchAction.Moved: UpdateTurn(e.Location); break;
+            case SKTouchAction.Released:
+            case SKTouchAction.Cancelled: EndTurn(); break;
+        }
+        e.Handled = true;
+    }
+#else
+    void OnPointerPressed(object? sender, PointerEventArgs e) => BeginTurn(ToPixels(e.GetPosition(_canvas)));
+    void OnPointerMoved(object? sender, PointerEventArgs e) => UpdateTurn(ToPixels(e.GetPosition(_canvas)));
+    void OnPointerReleased(object? sender, PointerEventArgs e) => EndTurn();
+#endif
 
     // X of the free (turning) edge, opposite the spine.
     float SpineOppositeX(float w) => _dir > 0 ? w : 0f;

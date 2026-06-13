@@ -22,6 +22,11 @@ public interface ICurlView : IView
     /// <summary>How fast a turn settles.</summary>
     CurlTurnSpeed TurnSpeed { get; set; }
 
+    /// <summary>Left/right inset (device-independent units) that holds the touch-sensitive curl edge
+    /// away from the physical screen edge, so a platform edge gesture (e.g. Android's back swipe)
+    /// can't hijack an edge page-turn at any height. 0 = no inset.</summary>
+    double EdgeInset { get; set; }
+
     /// <summary>Animate forward to the next view.</summary>
     Task AnimateAsync();
 
